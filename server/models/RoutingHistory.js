@@ -7,6 +7,7 @@ const routingHistorySchema = new mongoose.Schema({
   routingReason: { type: String },
   allScores: [{ type: mongoose.Schema.Types.Mixed }],
   eliminatedWarehouses: [{ type: mongoose.Schema.Types.Mixed }],
+  weights: { type: mongoose.Schema.Types.Mixed },
   createdAt: { type: Date, default: Date.now }
 });
 

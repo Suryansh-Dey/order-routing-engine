@@ -52,7 +52,8 @@ const RoutingDecision = () => {
                 routingReason: history.routingReason,
                 allScores: history.allScores || [],
                 eliminatedWarehouses: history.eliminatedWarehouses || [],
-                routingScore: history.routingScore // fallback for older entries
+                routingScore: history.routingScore, // fallback for older entries
+                weights: history.weights
               });
             }
           })

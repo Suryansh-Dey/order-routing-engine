@@ -25,7 +25,7 @@ exports.processAndRouteOrder = async ({ customerLat, customerLng, productId, qua
     return {
       success: false,
       message: 'No eligible warehouses with sufficient stock found',
-      data: { eliminatedWarehouses }
+      data: { eliminatedWarehouses, weights }
     };
   }
 
@@ -69,7 +69,8 @@ exports.processAndRouteOrder = async ({ customerLat, customerLng, productId, qua
     routingScore: finalScore,
     routingReason: aiExplanationText,
     allScores,
-    eliminatedWarehouses
+    eliminatedWarehouses,
+    weights
   });
   await routingHistory.save();
 

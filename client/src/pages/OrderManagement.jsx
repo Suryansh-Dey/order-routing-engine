@@ -102,7 +102,7 @@ const OrderManagement = () => {
         Order Management
       </Typography>
 
-      <Card sx={{ mb: 4, mt: 2 }}>
+      {user.role==='admin' && (<Card sx={{ mb: 4, mt: 2 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>Place New Order</Typography>
           <form onSubmit={handlePlaceOrder}>
@@ -148,7 +148,7 @@ const OrderManagement = () => {
             </Box>
           </form>
         </CardContent>
-      </Card>
+      </Card>)}
 
       <Typography variant="h6" gutterBottom>All Orders</Typography>
       <TableContainer component={Paper} sx={{ backgroundColor: 'rgba(255,255,255,0.03)' }}>
@@ -174,7 +174,7 @@ const OrderManagement = () => {
                   <Chip label={o.status.toUpperCase()} color={getStatusColor(o.status)} size="small" />
                 </TableCell>
                 <TableCell align="right">
-                  {o.status === 'assigned' && user.role === 'manager' && (
+                  {o.status === 'assigned' && (user.role === 'manager' || user.role === 'admin') && (
                     <Button size="small" color="success" onClick={() => markFulfilled(o._id)}>
                       Mark Fulfilled
                     </Button>
