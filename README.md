@@ -59,11 +59,13 @@ graph TD
 
 ## 🧮 Weighted Scoring Formula
 
-| Factor | Weight | Formula | Description |
+The routing engine calculates raw scores for all eligible candidate warehouses. To ensure your configured percentage weights carry true mathematical influence without one metric dominating, the raw scores are **normalized** using Min-Max scaling `(score - min) / (max - min)` on a 0.0 to 1.0 scale before the weights are applied.
+
+| Factor | Default Weight | Raw Formula | Description |
 |--------|--------|---------|-------------|
 | **Distance** | 35% | `1 / (1 + distance_km)` | Haversine distance in kilometers |
 | **Inventory** | 35% | `availableQty / (availableQty + reservedQty)` | Total stock ratio availability |
-| **Delivery** | 20% | `1 / ceil(distance_km / 200)` | Assumes 200km travel per day |
+| **Delivery** | 20% | `1 / seeded_random(product, warehouse)` | Pseudo-random 1-7 days (used to decouple from distance due to lack of real-time transit data) |
 | **Cost** | 10% | `1 / (1 + distance_km * 5)` | Cost factor at ₹5 per km |
 
 ## 🔑 Environment Variables
