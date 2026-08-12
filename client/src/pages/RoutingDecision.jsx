@@ -135,10 +135,10 @@ const RoutingDecision = () => {
                 <TableRow>
                   <TableCell>Warehouse</TableCell>
                   <TableCell>Distance (km)</TableCell>
-                  <TableCell>Dist Score ({weights?.distanceWeight || 35}%)</TableCell>
-                  <TableCell>Inv Score ({weights?.inventoryWeight || 35}%)</TableCell>
-                  <TableCell>Del Score ({weights?.deliveryWeight || 20}%)</TableCell>
-                  <TableCell>Cost Score ({weights?.costWeight || 10}%)</TableCell>
+                  <TableCell>Dist Score ({weights?.distanceWeight ?? 35}%)</TableCell>
+                  <TableCell>Inv Score ({weights?.inventoryWeight ?? 35}%)</TableCell>
+                  <TableCell>Del Score ({weights?.deliveryWeight ?? 20}%)</TableCell>
+                  <TableCell>Cost Score ({weights?.costWeight ?? 10}%)</TableCell>
                   <TableCell>Final Score</TableCell>
                 </TableRow>
               </TableHead>
@@ -159,25 +159,25 @@ const RoutingDecision = () => {
                     <TableCell>
                       <Typography variant="body2">{s.distScore.toFixed(4)}</Typography>
                       <Typography variant="caption" color="text.secondary">
-                        × {weights?.distanceWeight || 35}% = {s.distWeighted.toFixed(4)}
+                        × {weights?.distanceWeight ?? 35}% = {s.distWeighted.toFixed(4)}
                       </Typography>
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2">{s.invScore.toFixed(4)}</Typography>
                       <Typography variant="caption" color="text.secondary">
-                        × {weights?.inventoryWeight || 35}% = {s.invWeighted.toFixed(4)}
+                        × {weights?.inventoryWeight ?? 35}% = {s.invWeighted.toFixed(4)}
                       </Typography>
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2">{s.delScore.toFixed(4)}</Typography>
                       <Typography variant="caption" color="text.secondary">
-                        × {weights?.deliveryWeight || 20}% = {s.delWeighted.toFixed(4)}
+                        × {weights?.deliveryWeight ?? 20}% = {s.delWeighted.toFixed(4)}
                       </Typography>
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2">{s.costScore.toFixed(4)}</Typography>
                       <Typography variant="caption" color="text.secondary">
-                        × {weights?.costWeight || 10}% = {s.costWeighted.toFixed(4)}
+                        × {weights?.costWeight ?? 10}% = {s.costWeighted.toFixed(4)}
                       </Typography>
                     </TableCell>
                     <TableCell fontWeight="bold">{s.finalScore.toFixed(4)}</TableCell>

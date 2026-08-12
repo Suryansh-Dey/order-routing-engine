@@ -17,7 +17,16 @@ function deg2rad(deg) {
   return deg * (Math.PI / 180);
 }
 
-exports.selectBestWarehouse = async (inventories, quantity, customerLat, customerLng) => {
+function getSeededDeliveryDays(seedString) {
+  let hash = 0;
+  for (let i = 0; i < seedString.length; i++) {
+    hash = Math.imul(31, hash) + seedString.charCodeAt(i) | 0;
+  }
+  const positiveHash = Math.abs(hash);
+  return (positiveHash % 7) + 1; // Returns 1 to 7 days
+}
+
+exports.selectBestWarehouse = async (inventories, quantity, customerLat, customerLng, productName = 'Product') => {
   let bestScore = -1;
   let selectedWarehouse = null;
   let selectedInventory = null;
@@ -48,29 +57,70 @@ exports.selectBestWarehouse = async (inventories, quantity, customerLat, custome
       });
       continue;
     }
-    
+
     eligibleInventories.push(inv);
   }
+
+  if (eligibleInventories.length === 0) {
+    return {
+      selectedWarehouse: null,
+      finalScore: 0,
+      allScores: [],
+      eliminatedWarehouses,
+      selectedInventory: null,
+      weights: {
+        distanceWeight: config.distanceWeight,
+        inventoryWeight: config.inventoryWeight,
+        deliveryWeight: config.deliveryWeight,
+        costWeight: config.costWeight
+      }
+    };
+  }
+
+  const rawScores = [];
+  let minRawDist = Infinity, maxRawDist = -Infinity;
+  let minRawInv = Infinity, maxRawInv = -Infinity;
+  let minRawDel = Infinity, maxRawDel = -Infinity;
+  let minRawCost = Infinity, maxRawCost = -Infinity;
 
   for (const inv of eligibleInventories) {
     const warehouse = inv.warehouseId;
     const distance_km = getDistanceFromLatLonInKm(customerLat, customerLng, warehouse.latitude, warehouse.longitude);
+
+    // Raw Scores
+    const rawDistScore = 1 / (1 + distance_km);
     
-    // Distance Score
-    const distScore = 1 / (1 + distance_km);
-    
-    // Inventory Score
     const totalInventory = inv.availableQuantity + inv.reservedQuantity;
-    const invScore = totalInventory > 0 ? (inv.availableQuantity / totalInventory) : 0;
+    const rawInvScore = totalInventory > 0 ? (inv.availableQuantity / totalInventory) : 0;
     
-    // Delivery Score
-    let delivery_days = Math.ceil(distance_km / 200);
-    if (delivery_days === 0) delivery_days = 1;
-    const delScore = 1 / delivery_days;
+    const delivery_days = getSeededDeliveryDays(productName + warehouse.warehouseName);
+    const rawDelScore = 1 / delivery_days;
     
-    // Cost Score
-    const costScore = 1 / (1 + (distance_km * 5));
-    
+    const cost = distance_km * 5;
+    const rawCostScore = 1 / (1 + cost);
+
+    // Min/Max tracking
+    minRawDist = Math.min(minRawDist, rawDistScore);
+    maxRawDist = Math.max(maxRawDist, rawDistScore);
+    minRawInv = Math.min(minRawInv, rawInvScore);
+    maxRawInv = Math.max(maxRawInv, rawInvScore);
+    minRawDel = Math.min(minRawDel, rawDelScore);
+    maxRawDel = Math.max(maxRawDel, rawDelScore);
+    minRawCost = Math.min(minRawCost, rawCostScore);
+    maxRawCost = Math.max(maxRawCost, rawCostScore);
+
+    rawScores.push({ warehouse, inv, distance_km, delivery_days, cost, rawDistScore, rawInvScore, rawDelScore, rawCostScore });
+  }
+
+  for (const item of rawScores) {
+    const { warehouse, inv, distance_km, delivery_days, cost, rawDistScore, rawInvScore, rawDelScore, rawCostScore } = item;
+
+    // Min-Max Scaling (if min == max, all warehouses score 1 for this metric)
+    const distScore = maxRawDist === minRawDist ? 1 : (rawDistScore - minRawDist) / (maxRawDist - minRawDist);
+    const invScore = maxRawInv === minRawInv ? 1 : (rawInvScore - minRawInv) / (maxRawInv - minRawInv);
+    const delScore = maxRawDel === minRawDel ? 1 : (rawDelScore - minRawDel) / (maxRawDel - minRawDel);
+    const costScore = maxRawCost === minRawCost ? 1 : (rawCostScore - minRawCost) / (maxRawCost - minRawCost);
+
     // Final Score
     const finalScore = (wDist * distScore) + (wInv * invScore) + (wDel * delScore) + (wCost * costScore);
     
@@ -78,7 +128,7 @@ exports.selectBestWarehouse = async (inventories, quantity, customerLat, custome
       warehouseName: warehouse.warehouseName,
       distance_km,
       delivery_days,
-      cost: distance_km * 5,
+      cost,
       distScore,
       invScore,
       delScore,
@@ -98,11 +148,11 @@ exports.selectBestWarehouse = async (inventories, quantity, customerLat, custome
     }
   }
 
-  return { 
-    selectedWarehouse, 
-    finalScore: bestScore, 
-    allScores, 
-    eliminatedWarehouses, 
+  return {
+    selectedWarehouse,
+    finalScore: bestScore,
+    allScores,
+    eliminatedWarehouses,
     selectedInventory,
     weights: {
       distanceWeight: config.distanceWeight,

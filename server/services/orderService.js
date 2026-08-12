@@ -12,13 +12,16 @@ exports.processAndRouteOrder = async ({ customerLat, customerLng, productId, qua
 
   // Step 1: Query inventory
   const inventories = await Inventory.find({ productId }).populate('warehouseId');
+  const product = await Product.findById(productId);
+  const productName = product ? product.productName : 'Product';
   
   // Step 2 & 3: Score and select warehouse
   const { selectedWarehouse, finalScore, allScores, eliminatedWarehouses, selectedInventory, weights } = await routingEngine.selectBestWarehouse(
     inventories,
     quantity,
     customerLat,
-    customerLng
+    customerLng,
+    productName
   );
 
   if (!selectedWarehouse) {
@@ -47,18 +50,22 @@ exports.processAndRouteOrder = async ({ customerLat, customerLng, productId, qua
   await newOrder.save();
 
   // Step 5: Call AI Explanation
-  const product = await Product.findById(productId);
   const selectedScoreData = allScores.find(s => s.warehouseName === selectedWarehouse.warehouseName);
   const rejectedScores = allScores.filter(s => s.warehouseName !== selectedWarehouse.warehouseName);
 
   const aiExplanationText = await aiExplanation.generateExplanation({
-    productName: product ? product.productName : 'Product',
+    productName,
     selectedWarehouse: selectedWarehouse.warehouseName,
     distance: selectedScoreData.distance_km,
     inventory: selectedScoreData.inventory,
     deliveryDays: selectedScoreData.delivery_days,
     cost: selectedScoreData.cost,
     finalScore,
+    distScore: selectedScoreData.distScore,
+    invScore: selectedScoreData.invScore,
+    delScore: selectedScoreData.delScore,
+    costScore: selectedScoreData.costScore,
+    weights,
     rejectedWarehouses: rejectedScores
   });
 
